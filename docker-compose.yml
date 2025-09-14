@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:10.11
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dvwa
+      MYSQL_USER: dvwa
+      MYSQL_PASSWORD: p@ssw0rd
+    networks:
+      - labnet
+    volumes:
+      - db_data:/var/lib/mysql
+
+  dvwa:
+    image: vulnerables/web-dvwa
+    platform: linux/amd64
+    restart: unless-stopped
+    networks:
+      - labnet
+    ports:
+      - "8080:80"
+
+  waf:
+    image: owasp/modsecurity-crs:nginx
+    platform: linux/amd64
+    restart: unless-stopped
+    depends_on:
+      - dvwa
+    networks:
+      - labnet
+    ports:
+      - "8082:80"
+      - "8443:443"
+    environment:
+      PROXY_PASS: "http://dvwa:80"
+      MODSECURITY: "on"
+
+networks:
+  labnet:
+
+volumes:
+  db_data:
